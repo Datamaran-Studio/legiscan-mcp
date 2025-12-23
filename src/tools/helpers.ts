@@ -39,27 +39,3 @@ export function errorResponse(error: unknown) {
     isError: true,
   };
 }
-
-/**
- * Decode base64-encoded HTML document to text
- */
-export function decodeHtmlDoc(base64Doc: string): string {
-  return Buffer.from(base64Doc, "base64").toString("utf-8");
-}
-
-/**
- * Process a document response, optionally decoding HTML
- */
-export function processDocument<T extends { mime?: string; doc?: string }>(
-  doc: T,
-  decode?: boolean
-): T & { decoded?: boolean } {
-  if (decode && doc.mime === "text/html" && doc.doc) {
-    return {
-      ...doc,
-      doc: decodeHtmlDoc(doc.doc),
-      decoded: true,
-    };
-  }
-  return doc;
-}

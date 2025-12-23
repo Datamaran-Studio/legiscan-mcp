@@ -19,6 +19,11 @@ async function getCurrentSession(
   state: string
 ): Promise<Session> {
   const sessions = await client.getSessionList(state);
+
+  if (sessions.length === 0) {
+    throw new Error(`No sessions found for state "${state}"`);
+  }
+
   // Prefer active sessions (sine_die === 0), sort by year descending
   const active = sessions
     .filter((s) => s.sine_die === 0)
@@ -26,6 +31,33 @@ async function getCurrentSession(
   if (active.length > 0) return active[0];
   // Fallback to most recent session
   return sessions.sort((a, b) => b.year_end - a.year_end)[0];
+}
+
+/**
+ * Process items in batches to avoid API rate limits
+ */
+async function processBatched<T, R>(
+  items: T[],
+  processor: (item: T) => Promise<R>,
+  batchSize: number = 10
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = [];
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(batch.map(processor));
+    results.push(...batchResults);
+  }
+
+  return results;
+}
+
+/**
+ * Format error reason for display
+ */
+function formatError(reason: unknown): string {
+  if (reason instanceof Error) return reason.message;
+  return String(reason);
 }
 
 /**
@@ -103,9 +135,10 @@ export function registerCompositeTools(
         const errors: string[] = [];
         let legislatorName = "";
 
-        // Fetch all bills in parallel
-        const billResults = await Promise.allSettled(
-          bill_ids.map((id) => client.getBill(id))
+        // Fetch all bills in batches to avoid rate limits
+        const billResults = await processBatched(
+          bill_ids,
+          (id) => client.getBill(id)
         );
 
         for (let i = 0; i < billResults.length; i++) {
@@ -113,7 +146,7 @@ export function registerCompositeTools(
           const billId = bill_ids[i];
 
           if (result.status === "rejected") {
-            errors.push(`Bill ${billId}: ${result.reason}`);
+            errors.push(`Bill ${billId}: ${formatError(result.reason)}`);
             continue;
           }
 
@@ -130,9 +163,10 @@ export function registerCompositeTools(
             voteRefs = voteRefs.filter((v) => v.chamber === chamberMap[chamber]);
           }
 
-          // Fetch all roll calls for this bill in parallel
-          const rollCallResults = await Promise.allSettled(
-            voteRefs.map((v) => client.getRollCall(v.roll_call_id))
+          // Fetch all roll calls for this bill in batches
+          const rollCallResults = await processBatched(
+            voteRefs,
+            (v) => client.getRollCall(v.roll_call_id)
           );
 
           for (let j = 0; j < rollCallResults.length; j++) {
@@ -141,7 +175,7 @@ export function registerCompositeTools(
 
             if (rcResult.status === "rejected") {
               errors.push(
-                `Roll call ${voteRef.roll_call_id}: ${rcResult.reason}`
+                `Roll call ${voteRef.roll_call_id}: ${formatError(rcResult.reason)}`
               );
               continue;
             }
@@ -256,9 +290,10 @@ export function registerCompositeTools(
         const errors: string[] = [];
         let legislatorName = "";
 
-        // Fetch all bill details in parallel
-        const billResults = await Promise.allSettled(
-          filteredBills.map((b) => client.getBill(b.bill_id))
+        // Fetch all bill details in batches to avoid rate limits
+        const billResults = await processBatched(
+          filteredBills,
+          (b) => client.getBill(b.bill_id)
         );
 
         for (let i = 0; i < billResults.length; i++) {
@@ -266,7 +301,7 @@ export function registerCompositeTools(
           const billInfo = filteredBills[i];
 
           if (result.status === "rejected") {
-            errors.push(`Bill ${billInfo.bill_id}: ${result.reason}`);
+            errors.push(`Bill ${billInfo.bill_id}: ${formatError(result.reason)}`);
             continue;
           }
 
