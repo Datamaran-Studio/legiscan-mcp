@@ -11,35 +11,25 @@
  *   LEGISCAN_API_KEY - Your LegiScan API key (required)
  *
  * Available Tools:
- *   Sessions:
- *     - legiscan_get_session_list: List legislative sessions
+ *   Composite (High-Level Research):
+ *     - legiscan_find_legislator: Find legislator by name
+ *     - legiscan_get_legislator_votes: Get how a legislator voted on bills
+ *     - legiscan_get_primary_authored: Get primary authored bills only
  *
  *   Bills:
- *     - legiscan_get_master_list: Get all bills in a session
- *     - legiscan_get_master_list_raw: Get bill IDs with change hashes
  *     - legiscan_get_bill: Get detailed bill information
- *     - legiscan_get_bill_text: Get bill text document
- *     - legiscan_get_amendment: Get amendment document
- *     - legiscan_get_supplement: Get supplemental document
+ *     - legiscan_find_bill_by_number: Find bill by number (AB 858, etc.)
  *     - legiscan_get_roll_call: Get vote details
  *
  *   People:
  *     - legiscan_get_person: Get legislator information
  *     - legiscan_get_session_people: Get all legislators in session
- *     - legiscan_get_sponsored_list: Get bills sponsored by legislator
  *
  *   Search:
- *     - legiscan_search: Full-text search (50 results/page)
- *     - legiscan_search_raw: Full-text search (2000 results/page)
+ *     - legiscan_search: Full-text search
  *
- *   Datasets:
- *     - legiscan_get_dataset_list: List available bulk datasets
- *     - legiscan_get_dataset: Download dataset ZIP
- *
- *   Monitor:
- *     - legiscan_get_monitor_list: Get GAITS monitor list
- *     - legiscan_get_monitor_list_raw: Get monitor list (minimal)
- *     - legiscan_set_monitor: Add/remove from monitor list
+ *   Sessions:
+ *     - legiscan_get_session_list: List legislative sessions
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -51,8 +41,7 @@ import { registerSessionTools } from "./tools/sessions.js";
 import { registerBillTools } from "./tools/bills.js";
 import { registerPeopleTools } from "./tools/people.js";
 import { registerSearchTools } from "./tools/search.js";
-import { registerDatasetTools } from "./tools/datasets.js";
-import { registerMonitorTools } from "./tools/monitor.js";
+import { registerCompositeTools } from "./tools/composite.js";
 
 // Load environment variables
 config();
@@ -89,12 +78,11 @@ async function main() {
   });
 
   // Register all tools
-  registerSessionTools(server, client);
+  registerCompositeTools(server, client); // High-level research tools
   registerBillTools(server, client);
   registerPeopleTools(server, client);
   registerSearchTools(server, client);
-  registerDatasetTools(server, client);
-  registerMonitorTools(server, client);
+  registerSessionTools(server, client);
 
   // Start server with stdio transport
   const transport = new StdioServerTransport();

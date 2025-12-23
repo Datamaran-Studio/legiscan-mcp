@@ -10,8 +10,8 @@
     "dev": "tsc --watch",
     "test": "vitest run --exclude tests/e2e.test.ts",
     "test:watch": "vitest --exclude tests/e2e.test.ts",
-    "test:e2e": "LEGISCAN_E2E=1 vitest run tests/e2e.test.ts",
-    "test:all": "LEGISCAN_E2E=1 vitest run",
+    "test:e2e": "vitest run tests/e2e.test.ts",
+    "test:all": "vitest run",
     "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
     "lint": "eslint src tests",
     "lint:fix": "eslint src tests --fix",
@@ -26,8 +26,16 @@
     "congress",
     "state-legislature"
   ],
-  "author": "",
+  "author": "Shawn Patterson",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sh-patterson/legiscan-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sh-patterson/legiscan-mcp/issues"
+  },
+  "homepage": "https://github.com/sh-patterson/legiscan-mcp#readme",
   "engines": {
     "node": ">=18.0.0"
   },

@@ -19,6 +19,7 @@ import type {
   MonitorListItem,
   MonitorListRawItem,
   SessionPeople,
+  SponsoredBillItem,
   SponsoredBills,
   SessionListResponse,
   MasterListResponse,
@@ -40,6 +41,7 @@ import type {
   SetMonitorResponse,
   BaseResponse,
 } from "./types/legiscan.js";
+import { normalizeBillNumber } from "./tools/helpers.js";
 
 const API_BASE_URL = "https://api.legiscan.com/";
 const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
@@ -266,11 +268,64 @@ export class LegiScanClient {
    * Get list of bills sponsored by a legislator
    * @param peopleId The people_id to get sponsored bills for
    */
-  async getSponsoredList(peopleId: number): Promise<SponsoredBills> {
+  async getSponsoredList(peopleId: number): Promise<SponsoredBillItem[]> {
+    const response = await this.request<SponsoredListResponse>("getSponsoredList", {
+      id: peopleId,
+    });
+    return response.sponsoredbills.bills;
+  }
+
+  /**
+   * Get full sponsored list response including sponsor info and sessions
+   * @param peopleId The people_id to get sponsored bills for
+   */
+  async getSponsoredListFull(peopleId: number): Promise<SponsoredBills> {
     const response = await this.request<SponsoredListResponse>("getSponsoredList", {
       id: peopleId,
     });
     return response.sponsoredbills;
+  }
+
+  /**
+   * Find a bill by its number within a state's current session
+   * Handles variations like "AB 858", "AB858", "AB-858", "ab858"
+   * @param state State abbreviation (e.g., "CA", "TX")
+   * @param billNumber Bill number in any common format
+   */
+  async findBillByNumber(
+    state: string,
+    billNumber: string
+  ): Promise<MasterListItem | null> {
+    const masterList = await this.getMasterList({ state });
+    const normalizedQuery = normalizeBillNumber(billNumber);
+
+    for (const item of masterList) {
+      if (normalizeBillNumber(item.number) === normalizedQuery) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Find bills by number within a specific session
+   * Handles variations like "AB 858", "AB858", "AB-858", "ab858"
+   * @param sessionId The session_id to search within
+   * @param billNumber Bill number in any common format
+   */
+  async findBillByNumberInSession(
+    sessionId: number,
+    billNumber: string
+  ): Promise<MasterListItem | null> {
+    const masterList = await this.getMasterList({ id: sessionId });
+    const normalizedQuery = normalizeBillNumber(billNumber);
+
+    for (const item of masterList) {
+      if (normalizeBillNumber(item.number) === normalizedQuery) {
+        return item;
+      }
+    }
+    return null;
   }
 
   // ============================================

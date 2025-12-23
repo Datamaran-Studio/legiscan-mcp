@@ -23,3 +23,7 @@ coverage/
 # Logs
 *.log
 npm-debug.log*
+
+# Private project test files
+tests/e2e-real-world.test.ts
+tests/FRICTION_ANALYSIS.md

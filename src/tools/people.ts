@@ -41,21 +41,4 @@ export function registerPeopleTools(server: McpServer, client: LegiScanClient) {
       }
     }
   );
-
-  // Get Sponsored List
-  server.tool(
-    "legiscan_get_sponsored_list",
-    "Get all bills sponsored by a legislator across all sessions. Useful for researching a legislator's legislative priorities.",
-    {
-      people_id: z.number().describe("People ID of the legislator"),
-    },
-    async ({ people_id }) => {
-      try {
-        const sponsoredBills = await client.getSponsoredList(people_id);
-        return jsonResponse(sponsoredBills);
-      } catch (error) {
-        return errorResponse(error);
-      }
-    }
-  );
 }

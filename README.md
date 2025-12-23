@@ -1,14 +1,18 @@
 # LegiScan MCP Server
 
-A Model Context Protocol (MCP) server that provides access to the [LegiScan API](https://legiscan.com/) for legislative data from all 50 US states.
+[![CI](https://github.com/sh-patterson/legiscan-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/sh-patterson/legiscan-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
+
+A Model Context Protocol (MCP) server that provides access to the [LegiScan API](https://legiscan.com/) for legislative data from all 50 US states and Congress.
 
 ## Features
 
-- **18 MCP Tools** covering all LegiScan API operations
+- **10 Streamlined MCP Tools** optimized for legislative research workflows
+- **Composite tools** that batch multiple API calls (90%+ reduction in API usage)
 - Full TypeScript type definitions for all API responses
-- Comprehensive bill, vote, and legislator data access
-- Full-text search across legislation
-- GAITS bill monitoring support
+- Bill number normalization (handles AB 858, AB858, AB-858 formats)
 
 ## Setup
 
@@ -38,9 +42,12 @@ cp .env.example .env
 npm run build
 ```
 
-### 5. Add to Claude Code
+### 5. Add to Claude Desktop
 
-Add to your Claude Code MCP configuration (`~/.claude/claude_desktop_config.json`):
+Add to your Claude Desktop configuration:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -58,51 +65,55 @@ Add to your Claude Code MCP configuration (`~/.claude/claude_desktop_config.json
 
 ## Available Tools
 
-### Sessions
+### Composite Tools (High-Level Research)
 | Tool | Description |
 |------|-------------|
-| `legiscan_get_session_list` | List available legislative sessions by state |
+| `legiscan_find_legislator` | Find a legislator's people_id by name. Supports partial matching. |
+| `legiscan_get_legislator_votes` | Get how a legislator voted on multiple bills in one call. |
+| `legiscan_get_primary_authored` | Get only bills where legislator is primary author (not co-sponsor). |
 
 ### Bills
 | Tool | Description |
 |------|-------------|
-| `legiscan_get_master_list` | Get all bills in a session |
-| `legiscan_get_master_list_raw` | Get bill IDs with change hashes (efficient sync) |
 | `legiscan_get_bill` | Get detailed bill info (sponsors, history, votes, texts) |
-| `legiscan_get_bill_text` | Get bill text document (base64) |
-| `legiscan_get_amendment` | Get amendment document (base64) |
-| `legiscan_get_supplement` | Get supplemental docs (fiscal notes, veto letters) |
+| `legiscan_find_bill_by_number` | Find bill by number (handles AB 858, AB858, AB-858) |
 | `legiscan_get_roll_call` | Get vote details with individual legislator votes |
 
 ### People
 | Tool | Description |
 |------|-------------|
-| `legiscan_get_person` | Get legislator info with third-party IDs |
+| `legiscan_get_person` | Get legislator info with third-party IDs (VoteSmart, OpenSecrets, etc.) |
 | `legiscan_get_session_people` | Get all legislators active in a session |
-| `legiscan_get_sponsored_list` | Get bills sponsored by a legislator |
 
 ### Search
 | Tool | Description |
 |------|-------------|
-| `legiscan_search` | Full-text search (50 results/page) |
-| `legiscan_search_raw` | Full-text search (2000 results/page) |
+| `legiscan_search` | Full-text search across legislation |
 
-### Datasets
+### Sessions
 | Tool | Description |
 |------|-------------|
-| `legiscan_get_dataset_list` | List available bulk datasets |
-| `legiscan_get_dataset` | Download dataset ZIP archive |
-
-### Monitor (GAITS)
-| Tool | Description |
-|------|-------------|
-| `legiscan_get_monitor_list` | Get tracked bills |
-| `legiscan_get_monitor_list_raw` | Get tracked bills (minimal data) |
-| `legiscan_set_monitor` | Add/remove bills from monitor list |
+| `legiscan_get_session_list` | List available legislative sessions by state |
 
 ## Usage Examples
 
-### Search for bills about climate change in California
+### Find a legislator and get their voting record
+```
+1. Use legiscan_find_legislator with name="Smith" state="TX"
+2. Use legiscan_get_legislator_votes with people_id and bill_ids
+```
+
+### Get all primary authored bills for a legislator
+```
+Use legiscan_get_primary_authored with people_id=12345 state="TX"
+```
+
+### Find a specific bill by number
+```
+Use legiscan_find_bill_by_number with state="CA" bill_number="AB 858"
+```
+
+### Search for bills about a topic
 ```
 Use legiscan_search with query="climate change" state="CA"
 ```
@@ -112,25 +123,31 @@ Use legiscan_search with query="climate change" state="CA"
 Use legiscan_get_bill with bill_id=1234567
 ```
 
-### Find all legislators in Texas 2023 session
-```
-1. Use legiscan_get_session_list with state="TX"
-2. Use legiscan_get_session_people with the session_id
-```
+## API Call Reduction
 
-### Track how a legislator voted
-```
-1. Get bill with legiscan_get_bill
-2. Get roll call with legiscan_get_roll_call using roll_call_id from bill.votes[]
-3. Find legislator's vote in the votes[] array by people_id
+The composite tools dramatically reduce API calls for common workflows:
+
+| Workflow | Without Composites | With Composites |
+|----------|-------------------|-----------------|
+| Get votes for 1 legislator on 10 bills | ~80 calls | 1 call |
+| Filter primary authored from 150 sponsored | ~150 calls | 1 call |
+| Find legislator by name | 2 calls | 1 call |
+
+## Development
+
+```bash
+npm run build        # Compile TypeScript
+npm test             # Run unit tests
+npm run test:e2e     # Run E2E tests (requires API key)
+npm run lint         # Check for lint errors
+npm run format       # Format code with Prettier
 ```
 
 ## API Limits
 
 - Free public API keys have a **30,000 queries per month** limit
-- Respect rate limits: avoid polling more frequently than the recommended intervals
-- Use `*_raw` variants for efficient change detection
+- The composite tools help you stay within limits by batching operations
 
 ## License
 
-MIT
+MIT - see [LICENSE](LICENSE) for details.

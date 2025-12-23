@@ -516,7 +516,29 @@ describeWithApi("LegiScan API Client", () => {
           TEST_PEOPLE_ID = sessionPeople.people[0].people_id;
         }
 
+        // getSponsoredList now returns just the bills array (SponsoredBillItem[])
         const sponsoredBills = await client.getSponsoredList(TEST_PEOPLE_ID);
+
+        expect(Array.isArray(sponsoredBills)).toBe(true);
+
+        if (sponsoredBills.length > 0) {
+          const bill = sponsoredBills[0];
+          expect(bill).toHaveProperty("bill_id");
+          expect(bill).toHaveProperty("number");
+          expect(bill).toHaveProperty("session_id");
+        }
+
+        console.log(`Found ${sponsoredBills.length} sponsored bills`);
+      });
+
+      it("should get full sponsored list with sponsor info", async () => {
+        if (!TEST_PEOPLE_ID) {
+          const sessionPeople = await client.getSessionPeople(TEST_SESSION_ID);
+          TEST_PEOPLE_ID = sessionPeople.people[0].people_id;
+        }
+
+        // getSponsoredListFull returns the complete object with sponsor, sessions, and bills
+        const sponsoredBills = await client.getSponsoredListFull(TEST_PEOPLE_ID);
 
         expect(sponsoredBills).toHaveProperty("sponsor");
         expect(sponsoredBills).toHaveProperty("sessions");
@@ -525,24 +547,6 @@ describeWithApi("LegiScan API Client", () => {
         // Verify sponsor info
         expect(sponsoredBills.sponsor).toHaveProperty("people_id", TEST_PEOPLE_ID);
         expect(sponsoredBills.sponsor).toHaveProperty("name");
-
-        // Verify sessions array (full session objects)
-        expect(Array.isArray(sponsoredBills.sessions)).toBe(true);
-
-        if (sponsoredBills.sessions.length > 0) {
-          const session = sponsoredBills.sessions[0];
-          expect(session).toHaveProperty("session_id");
-          expect(session).toHaveProperty("session_name");
-        }
-
-        // Verify bills array (separate from sessions)
-        expect(Array.isArray(sponsoredBills.bills)).toBe(true);
-
-        if (sponsoredBills.bills.length > 0) {
-          const bill = sponsoredBills.bills[0];
-          expect(bill).toHaveProperty("bill_id");
-          expect(bill).toHaveProperty("number");
-        }
 
         console.log(`Found ${sponsoredBills.bills.length} sponsored bills across ${sponsoredBills.sessions.length} sessions`);
       });
