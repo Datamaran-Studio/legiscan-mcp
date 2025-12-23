@@ -3,6 +3,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { LegiScanClient } from "../legiscan-client.js";
+import { jsonResponse, errorResponse } from "./helpers.js";
 
 export function registerSessionTools(server: McpServer, client: LegiScanClient) {
   server.tool(
@@ -19,24 +20,9 @@ export function registerSessionTools(server: McpServer, client: LegiScanClient) 
     async ({ state }) => {
       try {
         const sessions = await client.getSessionList(state);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(sessions, null, 2),
-            },
-          ],
-        };
+        return jsonResponse(sessions);
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResponse(error);
       }
     }
   );

@@ -46,7 +46,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { config } from "dotenv";
 
-import { LegiScanClient, LegiScanError } from "./legiscan-client.js";
+import { LegiScanClient } from "./legiscan-client.js";
 import { registerSessionTools } from "./tools/sessions.js";
 import { registerBillTools } from "./tools/bills.js";
 import { registerPeopleTools } from "./tools/people.js";

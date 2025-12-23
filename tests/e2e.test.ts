@@ -10,16 +10,25 @@
  * 6. Legislator lookup
  *
  * Run with: npm run test:e2e
+ * Requires: LEGISCAN_API_KEY environment variable
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
+import { config } from "dotenv";
 import { LegiScanClient } from "../src/legiscan-client.js";
+
+// Load .env file
+config();
 
 // Test configuration
 const TEST_STATE = "CA";
 const TEST_QUERY = "education";
 
-describe("LegiScan MCP E2E Tests", () => {
+// Skip entire suite if no API key
+const apiKey = process.env.LEGISCAN_API_KEY;
+const describeE2E = apiKey ? describe : describe.skip;
+
+describeE2E("LegiScan MCP E2E Tests", () => {
   let client: LegiScanClient;
 
   // Cached IDs from sequential tests
@@ -30,11 +39,7 @@ describe("LegiScan MCP E2E Tests", () => {
   let peopleId: number | undefined;
 
   beforeAll(() => {
-    const apiKey = process.env.LEGISCAN_API_KEY;
-    if (!apiKey) {
-      throw new Error("LEGISCAN_API_KEY environment variable required");
-    }
-    client = new LegiScanClient(apiKey);
+    client = new LegiScanClient(apiKey!);
   });
 
   describe("Session Discovery", () => {

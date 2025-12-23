@@ -3,6 +3,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { LegiScanClient } from "../legiscan-client.js";
+import { jsonResponse, errorResponse } from "./helpers.js";
 
 export function registerMonitorTools(server: McpServer, client: LegiScanClient) {
   // Get Monitor List
@@ -13,31 +14,14 @@ export function registerMonitorTools(server: McpServer, client: LegiScanClient) 
       record: z
         .string()
         .optional()
-        .describe(
-          "Filter: 'current' (default), 'archived', or year >= 2010"
-        ),
+        .describe("Filter: 'current' (default), 'archived', or year >= 2010"),
     },
     async ({ record }) => {
       try {
         const bills = await client.getMonitorList(record);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(bills, null, 2),
-            },
-          ],
-        };
+        return jsonResponse(bills);
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResponse(error);
       }
     }
   );
@@ -50,31 +34,14 @@ export function registerMonitorTools(server: McpServer, client: LegiScanClient) 
       record: z
         .string()
         .optional()
-        .describe(
-          "Filter: 'current' (default), 'archived', or year >= 2010"
-        ),
+        .describe("Filter: 'current' (default), 'archived', or year >= 2010"),
     },
     async ({ record }) => {
       try {
         const bills = await client.getMonitorListRaw(record);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(bills, null, 2),
-            },
-          ],
-        };
+        return jsonResponse(bills);
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResponse(error);
       }
     }
   );
@@ -84,14 +51,10 @@ export function registerMonitorTools(server: McpServer, client: LegiScanClient) 
     "legiscan_set_monitor",
     "Add, remove, or update bills on your GAITS monitor list. Use to track legislation with support/oppose/watch stance.",
     {
-      list: z
-        .string()
-        .describe("Comma-separated bill_ids (e.g., '1234567,1234568')"),
+      list: z.string().describe("Comma-separated bill_ids (e.g., '1234567,1234568')"),
       action: z
         .enum(["monitor", "remove", "set"])
-        .describe(
-          "'monitor' to add bills, 'remove' to delete, 'set' to update stance"
-        ),
+        .describe("'monitor' to add bills, 'remove' to delete, 'set' to update stance"),
       stance: z
         .enum(["watch", "support", "oppose"])
         .optional()
@@ -100,24 +63,9 @@ export function registerMonitorTools(server: McpServer, client: LegiScanClient) 
     async ({ list, action, stance }) => {
       try {
         const result = await client.setMonitor({ list, action, stance });
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        return jsonResponse(result);
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResponse(error);
       }
     }
   );

@@ -42,6 +42,7 @@ import type {
 } from "./types/legiscan.js";
 
 const API_BASE_URL = "https://api.legiscan.com/";
+const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
 
 export class LegiScanError extends Error {
   constructor(message: string) {
@@ -55,7 +56,7 @@ export interface SearchParams {
   query: string;
   year?: number;
   page?: number;
-  id?: number; // session_id for searching specific session
+  session_id?: number;
 }
 
 export interface SetMonitorParams {
@@ -88,21 +89,38 @@ export class LegiScanClient {
       }
     }
 
-    const response = await fetch(url.toString());
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-    if (!response.ok) {
+    try {
+      const response = await fetch(url.toString(), {
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new LegiScanError(`HTTP error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as T;
+
+      if (data.status === "ERROR") {
+        throw new LegiScanError(data.alert?.message || "Unknown API error");
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new LegiScanError(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`);
+      }
+      if (error instanceof LegiScanError) {
+        throw error;
+      }
       throw new LegiScanError(
-        `HTTP error ${response.status}: ${response.statusText}`
+        `Network error: ${error instanceof Error ? error.message : String(error)}`
       );
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const data = (await response.json()) as T;
-
-    if (data.status === "ERROR") {
-      throw new LegiScanError(data.alert?.message || "Unknown API error");
-    }
-
-    return data;
   }
 
   // ============================================
@@ -132,12 +150,12 @@ export class LegiScanClient {
     id?: number;
     state?: string;
   }): Promise<MasterListItem[]> {
-    const response = await this.request<MasterListResponse>(
-      "getMasterList",
-      params
+    const response = await this.request<MasterListResponse>("getMasterList", params);
+    // Convert object to array, filtering to only bill entries (have bill_id)
+    return Object.values(response.masterlist).filter(
+      (item): item is MasterListItem =>
+        item !== null && typeof item === "object" && "bill_id" in item
     );
-    // Convert object to array (API returns { "0": {...}, "1": {...} })
-    return Object.values(response.masterlist);
   }
 
   /**
@@ -152,7 +170,11 @@ export class LegiScanClient {
       "getMasterListRaw",
       params
     );
-    return Object.values(response.masterlist);
+    // Filter to only bill entries (have bill_id)
+    return Object.values(response.masterlist).filter(
+      (item): item is MasterListRawItem =>
+        item !== null && typeof item === "object" && "bill_id" in item
+    );
   }
 
   /**
@@ -234,10 +256,9 @@ export class LegiScanClient {
    * @param sessionId The session_id to retrieve people for
    */
   async getSessionPeople(sessionId: number): Promise<SessionPeople> {
-    const response = await this.request<SessionPeopleResponse>(
-      "getSessionPeople",
-      { id: sessionId }
-    );
+    const response = await this.request<SessionPeopleResponse>("getSessionPeople", {
+      id: sessionId,
+    });
     return response.sessionpeople;
   }
 
@@ -246,10 +267,9 @@ export class LegiScanClient {
    * @param peopleId The people_id to get sponsored bills for
    */
   async getSponsoredList(peopleId: number): Promise<SponsoredBills> {
-    const response = await this.request<SponsoredListResponse>(
-      "getSponsoredList",
-      { id: peopleId }
-    );
+    const response = await this.request<SponsoredListResponse>("getSponsoredList", {
+      id: peopleId,
+    });
     return response.sponsoredbills;
   }
 
@@ -270,8 +290,8 @@ export class LegiScanClient {
       page: params.page,
     };
 
-    if (params.id) {
-      apiParams.id = params.id;
+    if (params.session_id) {
+      apiParams.id = params.session_id;
     } else {
       apiParams.state = params.state || "ALL";
       apiParams.year = params.year;
@@ -279,10 +299,15 @@ export class LegiScanClient {
 
     const response = await this.request<SearchResponse>("getSearch", apiParams);
 
-    // Extract results from numbered keys
+    // Extract results from numbered keys (filter out null/non-object entries)
     const results: SearchResultItem[] = [];
     for (const [key, value] of Object.entries(response.searchresult)) {
-      if (key !== "summary" && typeof value === "object" && "bill_id" in value) {
+      if (
+        key !== "summary" &&
+        value !== null &&
+        typeof value === "object" &&
+        "bill_id" in value
+      ) {
         results.push(value as SearchResultItem);
       }
     }
@@ -306,17 +331,14 @@ export class LegiScanClient {
       page: params.page,
     };
 
-    if (params.id) {
-      apiParams.id = params.id;
+    if (params.session_id) {
+      apiParams.id = params.session_id;
     } else {
       apiParams.state = params.state || "ALL";
       apiParams.year = params.year;
     }
 
-    const response = await this.request<SearchRawResponse>(
-      "getSearchRaw",
-      apiParams
-    );
+    const response = await this.request<SearchRawResponse>("getSearchRaw", apiParams);
 
     return {
       summary: response.searchresult.summary,
@@ -332,14 +354,8 @@ export class LegiScanClient {
    * Get list of available datasets
    * @param params Optional filters for state and/or year
    */
-  async getDatasetList(params?: {
-    state?: string;
-    year?: number;
-  }): Promise<Dataset[]> {
-    const response = await this.request<DatasetListResponse>(
-      "getDatasetList",
-      params
-    );
+  async getDatasetList(params?: { state?: string; year?: number }): Promise<Dataset[]> {
+    const response = await this.request<DatasetListResponse>("getDatasetList", params);
     return response.datasetlist;
   }
 
@@ -382,10 +398,9 @@ export class LegiScanClient {
    * @param record Optional: "current" (default), "archived", or year >= 2010
    */
   async getMonitorListRaw(record?: string): Promise<MonitorListRawItem[]> {
-    const response = await this.request<MonitorListRawResponse>(
-      "getMonitorListRaw",
-      { record }
-    );
+    const response = await this.request<MonitorListRawResponse>("getMonitorListRaw", {
+      record,
+    });
     return Object.values(response.monitorlist);
   }
 
@@ -393,9 +408,7 @@ export class LegiScanClient {
    * Add/remove bills from GAITS monitor list
    * @param params Monitor operation parameters
    */
-  async setMonitor(
-    params: SetMonitorParams
-  ): Promise<Record<string, string>> {
+  async setMonitor(params: SetMonitorParams): Promise<Record<string, string>> {
     const response = await this.request<SetMonitorResponse>("setMonitor", {
       list: params.list,
       action: params.action,

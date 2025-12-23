@@ -3,6 +3,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { LegiScanClient } from "../legiscan-client.js";
+import { jsonResponse, errorResponse } from "./helpers.js";
 
 export function registerSearchTools(server: McpServer, client: LegiScanClient) {
   // Full-text search (paginated, 50 per page)
@@ -27,10 +28,7 @@ export function registerSearchTools(server: McpServer, client: LegiScanClient) {
         .describe(
           "Year filter: 1=all, 2=current (default), 3=recent, 4=prior, or exact year (>1900)"
         ),
-      page: z
-        .number()
-        .optional()
-        .describe("Page number for pagination. Default: 1"),
+      page: z.number().optional().describe("Page number for pagination. Default: 1"),
       session_id: z
         .number()
         .optional()
@@ -43,26 +41,11 @@ export function registerSearchTools(server: McpServer, client: LegiScanClient) {
           state,
           year,
           page,
-          id: session_id,
+          session_id,
         });
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        return jsonResponse(result);
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResponse(error);
       }
     }
   );
@@ -72,11 +55,7 @@ export function registerSearchTools(server: McpServer, client: LegiScanClient) {
     "legiscan_search_raw",
     "Full-text search returning up to 2000 results per page with minimal data (bill_id, relevance, change_hash). Use for automated monitoring and bulk operations.",
     {
-      query: z
-        .string()
-        .describe(
-          "Search query. Supports full-text search syntax."
-        ),
+      query: z.string().describe("Search query. Supports full-text search syntax."),
       state: z
         .string()
         .optional()
@@ -89,10 +68,7 @@ export function registerSearchTools(server: McpServer, client: LegiScanClient) {
         .describe(
           "Year filter: 1=all, 2=current (default), 3=recent, 4=prior, or exact year (>1900)"
         ),
-      page: z
-        .number()
-        .optional()
-        .describe("Page number for pagination. Default: 1"),
+      page: z.number().optional().describe("Page number for pagination. Default: 1"),
       session_id: z
         .number()
         .optional()
@@ -105,26 +81,11 @@ export function registerSearchTools(server: McpServer, client: LegiScanClient) {
           state,
           year,
           page,
-          id: session_id,
+          session_id,
         });
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        return jsonResponse(result);
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResponse(error);
       }
     }
   );

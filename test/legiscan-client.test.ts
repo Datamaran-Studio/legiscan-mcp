@@ -63,7 +63,7 @@ describeWithApi("LegiScan API Client", () => {
         expect(session).toHaveProperty("state_id");
         expect(session).toHaveProperty("year_start");
         expect(session).toHaveProperty("year_end");
-        expect(session).toHaveProperty("name");
+        expect(session).toHaveProperty("session_name");
         expect(session).toHaveProperty("session_tag");
 
         // Store session_id for later tests
@@ -71,7 +71,7 @@ describeWithApi("LegiScan API Client", () => {
         const regularSession = sessions.find(s => s.special === 0) || sessions[0];
         TEST_SESSION_ID = regularSession.session_id;
 
-        console.log(`Using session: ${regularSession.name} (ID: ${TEST_SESSION_ID})`);
+        console.log(`Using session: ${regularSession.session_name} (ID: ${TEST_SESSION_ID})`);
       });
 
       it("should get all sessions when no state is specified", async () => {
@@ -832,9 +832,14 @@ describeWithApi("LegiScan API Client", () => {
       });
     });
 
-    describe("setMonitor", () => {
+    // GAITS mutation tests are opt-in to avoid modifying real monitor lists
+    const describeMutation = process.env.LEGISCAN_TEST_MUTATIONS
+      ? describe
+      : describe.skip;
+
+    describeMutation("setMonitor", () => {
       // Note: These tests modify the user's monitor list
-      // They add a bill, verify it's added, then remove it
+      // Run with LEGISCAN_TEST_MUTATIONS=1 to enable
 
       it("should add and remove a bill from monitor list", async () => {
         // Skip if we don't have a test bill
