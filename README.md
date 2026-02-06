@@ -186,6 +186,7 @@ The composite tools dramatically reduce API calls for common workflows:
 
 ## Research Tips
 
+- State codes are validated as two-letter strings and uppercased automatically (`ca` → `CA`). Invalid codes like `ZZ` pass local validation but return an API error from LegiScan.
 - Always pin state and session in your prompt to reduce ambiguous results.
 - Ask the agent to show `bill_id`, `roll_call_id`, and `people_id` in intermediate output so you can audit traceability.
 - For legislator search, provide at least a first and last name (name input must be at least 2 characters).

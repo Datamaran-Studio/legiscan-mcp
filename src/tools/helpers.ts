@@ -21,7 +21,7 @@ export const stateCodeSchema = z
 export const searchStateSchema = z
   .string()
   .trim()
-  .regex(/^(?:[A-Za-z]{2}|ALL)$/i, "State must be two-letter code or ALL")
+  .regex(/^(?:[A-Za-z]{2}|[Aa][Ll][Ll])$/, "State must be two-letter code or ALL")
   .transform((value) => value.toUpperCase());
 
 /**
