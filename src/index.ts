@@ -32,16 +32,10 @@
  *     - legiscan_get_session_list: List legislative sessions
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { config } from "dotenv";
 
-import { LegiScanClient } from "./legiscan-client.js";
-import { registerSessionTools } from "./tools/sessions.js";
-import { registerBillTools } from "./tools/bills.js";
-import { registerPeopleTools } from "./tools/people.js";
-import { registerSearchTools } from "./tools/search.js";
-import { registerCompositeTools } from "./tools/composite.js";
+import { createServer } from "./server.js";
 
 // Load environment variables
 config();
@@ -58,31 +52,8 @@ async function main() {
     process.exit(1);
   }
 
-  // Create LegiScan client
-  let client: LegiScanClient;
-  try {
-    client = new LegiScanClient(apiKey);
-  } catch (error) {
-    console.error(
-      `Error initializing LegiScan client: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
-    process.exit(1);
-  }
-
-  // Create MCP server
-  const server = new McpServer({
-    name: "legiscan",
-    version: "1.0.0",
-  });
-
-  // Register all tools
-  registerCompositeTools(server, client); // High-level research tools
-  registerBillTools(server, client);
-  registerPeopleTools(server, client);
-  registerSearchTools(server, client);
-  registerSessionTools(server, client);
+  // Create MCP server with all tools
+  const server = createServer(apiKey);
 
   // Start server with stdio transport
   const transport = new StdioServerTransport();

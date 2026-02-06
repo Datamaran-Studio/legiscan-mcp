@@ -13,7 +13,7 @@ export function registerPeopleTools(server: McpServer, client: LegiScanClient) {
     {
       people_id: z
         .number()
-        .describe("People ID from sponsors, votes, or session people lists"),
+        .describe("Legislator ID (use find_legislator to resolve from name)"),
     },
     async ({ people_id }) => {
       try {
@@ -30,7 +30,9 @@ export function registerPeopleTools(server: McpServer, client: LegiScanClient) {
     "legiscan_get_session_people",
     "Get all legislators active in a legislative session. Returns list of people with their roles, parties, and districts.",
     {
-      session_id: z.number().describe("Session ID from getSessionList"),
+      session_id: z
+        .number()
+        .describe("Session ID (use get_session_list to find sessions for a state)"),
     },
     async ({ session_id }) => {
       try {

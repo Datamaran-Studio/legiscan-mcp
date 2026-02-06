@@ -26,9 +26,9 @@ export function registerBillTools(server: McpServer, client: LegiScanClient) {
   // Get Roll Call
   server.tool(
     "legiscan_get_roll_call",
-    "Get roll call vote details including individual legislator votes. Use roll_call_id from bill.votes[] array.",
+    "Get roll call vote details including individual legislator votes. Get roll_call_id by calling get_bill first.",
     {
-      roll_call_id: z.number().describe("Roll call ID from bill.votes[] array"),
+      roll_call_id: z.number().describe("Roll call ID from get_bill response"),
     },
     async ({ roll_call_id }) => {
       try {

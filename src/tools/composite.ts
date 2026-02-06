@@ -104,9 +104,11 @@ export function registerCompositeTools(server: McpServer, client: LegiScanClient
   // ============================================
   server.tool(
     "legiscan_get_legislator_votes",
-    "Get how a legislator voted on specific bills. Reduces hundreds of API calls to one. Returns vote positions (Yea/Nay/NV/Absent) for each bill with roll call details.",
+    "Get how a legislator voted on specific bills. Use find_legislator first to get people_id from a name. Returns vote positions (Yea/Nay/NV/Absent) for each bill with roll call details.",
     {
-      people_id: z.number().describe("Legislator people_id to look up votes for"),
+      people_id: z
+        .number()
+        .describe("Legislator ID (use find_legislator to resolve from name)"),
       bill_ids: z
         .array(z.number())
         .min(1, "bill_ids must include at least one bill_id")
@@ -232,11 +234,11 @@ export function registerCompositeTools(server: McpServer, client: LegiScanClient
   // ============================================
   server.tool(
     "legiscan_get_primary_authored",
-    "Get only bills where a legislator is the PRIMARY author (sponsor_order=1), not co-sponsor. Filters out co-sponsored bills automatically.",
+    "Get only bills where a legislator is the PRIMARY author, not co-sponsor. Use find_legislator first to get people_id from a name. Filters out co-sponsored bills automatically.",
     {
       people_id: z
         .number()
-        .describe("Legislator people_id to get primary authored bills for"),
+        .describe("Legislator ID (use find_legislator to resolve from name)"),
       session_id: z.number().optional().describe("Optional session_id to filter results"),
       state: stateCodeSchema
         .optional()
