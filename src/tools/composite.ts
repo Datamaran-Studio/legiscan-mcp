@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { LegiScanClient } from "../legiscan-client.js";
 import type { Person, Sponsor, Session } from "../types/legiscan.js";
-import { jsonResponse, errorResponse } from "./helpers.js";
+import { jsonResponse, errorResponse, stateCodeSchema } from "./helpers.js";
 
 // ============================================
 // Helper Functions
@@ -107,7 +107,11 @@ export function registerCompositeTools(server: McpServer, client: LegiScanClient
     "Get how a legislator voted on specific bills. Reduces hundreds of API calls to one. Returns vote positions (Yea/Nay/NV/Absent) for each bill with roll call details.",
     {
       people_id: z.number().describe("Legislator people_id to look up votes for"),
-      bill_ids: z.array(z.number()).describe("Array of bill_ids to check votes on"),
+      bill_ids: z
+        .array(z.number())
+        .min(1, "bill_ids must include at least one bill_id")
+        .max(100, "bill_ids supports up to 100 bills per request")
+        .describe("Array of bill_ids to check votes on (max 100)"),
       chamber: z
         .enum(["H", "S", "A"])
         .optional()
@@ -234,8 +238,7 @@ export function registerCompositeTools(server: McpServer, client: LegiScanClient
         .number()
         .describe("Legislator people_id to get primary authored bills for"),
       session_id: z.number().optional().describe("Optional session_id to filter results"),
-      state: z
-        .string()
+      state: stateCodeSchema
         .optional()
         .describe(
           "Optional state abbreviation - if provided without session_id, uses current session"
@@ -341,8 +344,10 @@ export function registerCompositeTools(server: McpServer, client: LegiScanClient
     {
       name: z
         .string()
+        .trim()
+        .min(2, "name must be at least 2 characters")
         .describe("Full or partial name to search (e.g., 'Smith', 'Jane Smith')"),
-      state: z.string().describe("Two-letter state abbreviation (e.g., 'CA')"),
+      state: stateCodeSchema.describe("Two-letter state abbreviation (e.g., 'CA')"),
       session_id: z
         .number()
         .optional()

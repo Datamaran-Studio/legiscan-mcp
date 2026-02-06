@@ -1,4 +1,5 @@
 // Shared helpers for MCP tool handlers
+import { z } from "zod";
 
 /**
  * Normalize a bill number for comparison
@@ -10,6 +11,18 @@ export function normalizeBillNumber(input: string): string {
     .replace(/[\s.-]/g, "") // Remove spaces, dots, dashes
     .replace(/^([A-Z]+)0+(\d)/, "$1$2"); // Strip leading zeros: AB0858 → AB858
 }
+
+export const stateCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z]{2}$/, "State must be a two-letter abbreviation")
+  .transform((value) => value.toUpperCase());
+
+export const searchStateSchema = z
+  .string()
+  .trim()
+  .regex(/^(?:[A-Za-z]{2}|ALL)$/i, "State must be two-letter code or ALL")
+  .transform((value) => value.toUpperCase());
 
 /**
  * Create a successful JSON tool response

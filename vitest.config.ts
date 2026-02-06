@@ -1,21 +1,19 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // Enable globals for describe, it, expect
     globals: true,
-    // Increase timeout for API calls
     testTimeout: 30000,
-    // Run tests sequentially to avoid API rate limits
     sequence: {
-      concurrent: false
+      concurrent: false,
     },
-    // Enable coverage
+    include: ["tests/unit/**/*.test.ts"],
+    exclude: ["node_modules/**", "dist/**", "tests/live/**", "tests/e2e-real-world.test.ts"],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-      include: ['src/**/*.ts'],
-      exclude: ['src/types/**/*.ts']
-    }
-  }
+      provider: "v8",
+      reporter: ["text", "html"],
+      include: ["src/**/*.ts"],
+      exclude: ["src/types/**/*.ts"],
+    },
+  },
 });

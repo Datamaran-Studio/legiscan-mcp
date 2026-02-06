@@ -3,7 +3,7 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { config } from "dotenv";
-import { LegiScanClient, LegiScanError } from "../src/legiscan-client.js";
+import { LegiScanClient, LegiScanError } from "../../src/legiscan-client.js";
 
 // Load environment variables
 config();
@@ -68,10 +68,12 @@ describeWithApi("LegiScan API Client", () => {
 
         // Store session_id for later tests
         // Find the most recent regular session
-        const regularSession = sessions.find(s => s.special === 0) || sessions[0];
+        const regularSession = sessions.find((s) => s.special === 0) || sessions[0];
         TEST_SESSION_ID = regularSession.session_id;
 
-        console.log(`Using session: ${regularSession.session_name} (ID: ${TEST_SESSION_ID})`);
+        console.log(
+          `Using session: ${regularSession.session_name} (ID: ${TEST_SESSION_ID})`
+        );
       });
 
       it("should get all sessions when no state is specified", async () => {
@@ -84,7 +86,7 @@ describeWithApi("LegiScan API Client", () => {
       it("should include special session indicator", async () => {
         const sessions = await client.getSessionList(TEST_STATE);
 
-        sessions.forEach(session => {
+        sessions.forEach((session) => {
           expect(typeof session.special).toBe("number");
           expect([0, 1]).toContain(session.special);
         });
@@ -314,10 +316,15 @@ describeWithApi("LegiScan API Client", () => {
     describe("getAmendment", () => {
       it("should get amendment document if available", async () => {
         if (!TEST_AMENDMENT_ID) {
-          console.log("Skipping getAmendment - no amendment_id available, finding one...");
+          console.log(
+            "Skipping getAmendment - no amendment_id available, finding one..."
+          );
 
           // Try to find a bill with amendments
-          const searchResult = await client.getSearch({ state: TEST_STATE, query: "amendment" });
+          const searchResult = await client.getSearch({
+            state: TEST_STATE,
+            query: "amendment",
+          });
           for (const result of searchResult.results.slice(0, 5)) {
             const bill = await client.getBill(result.bill_id);
             if (bill.amendments.length > 0) {
@@ -349,10 +356,15 @@ describeWithApi("LegiScan API Client", () => {
     describe("getSupplement", () => {
       it("should get supplement document if available", async () => {
         if (!TEST_SUPPLEMENT_ID) {
-          console.log("Skipping getSupplement - no supplement_id available, finding one...");
+          console.log(
+            "Skipping getSupplement - no supplement_id available, finding one..."
+          );
 
           // Try to find a bill with supplements
-          const searchResult = await client.getSearch({ state: TEST_STATE, query: "fiscal note" });
+          const searchResult = await client.getSearch({
+            state: TEST_STATE,
+            query: "fiscal note",
+          });
           for (const result of searchResult.results.slice(0, 5)) {
             const bill = await client.getBill(result.bill_id);
             if (bill.supplements.length > 0) {
@@ -432,7 +444,9 @@ describeWithApi("LegiScan API Client", () => {
           expect(vote).toHaveProperty("vote_text");
         }
 
-        console.log(`Roll call: ${rollCall.desc} - Yea: ${rollCall.yea}, Nay: ${rollCall.nay}`);
+        console.log(
+          `Roll call: ${rollCall.desc} - Yea: ${rollCall.yea}, Nay: ${rollCall.nay}`
+        );
       });
     });
   });
@@ -462,7 +476,9 @@ describeWithApi("LegiScan API Client", () => {
         expect(person).toHaveProperty("state_id");
         expect(person).toHaveProperty("district");
 
-        console.log(`Person: ${person.name} (${person.party}) - ${person.role}, District ${person.district}`);
+        console.log(
+          `Person: ${person.name} (${person.party}) - ${person.role}, District ${person.district}`
+        );
       });
 
       it("should include third-party IDs (votesmart, ftm_eid, opensecrets)", async () => {
@@ -548,7 +564,9 @@ describeWithApi("LegiScan API Client", () => {
         expect(sponsoredBills.sponsor).toHaveProperty("people_id", TEST_PEOPLE_ID);
         expect(sponsoredBills.sponsor).toHaveProperty("name");
 
-        console.log(`Found ${sponsoredBills.bills.length} sponsored bills across ${sponsoredBills.sessions.length} sessions`);
+        console.log(
+          `Found ${sponsoredBills.bills.length} sponsored bills across ${sponsoredBills.sessions.length} sessions`
+        );
       });
     });
   });
@@ -637,7 +655,7 @@ describeWithApi("LegiScan API Client", () => {
         expect(result.summary.count).toBeGreaterThan(0);
 
         // Should have results from multiple states
-        const states = new Set(result.results.map(r => r.state));
+        const states = new Set(result.results.map((r) => r.state));
         expect(states.size).toBeGreaterThan(1);
 
         console.log(`Found "cannabis" bills in ${states.size} states`);
@@ -645,14 +663,16 @@ describeWithApi("LegiScan API Client", () => {
 
       it("should search by session_id", async () => {
         const result = await client.getSearch({
-          id: TEST_SESSION_ID,
+          session_id: TEST_SESSION_ID,
           query: "tax",
         });
 
         expect(result).toHaveProperty("summary");
         expect(result).toHaveProperty("results");
 
-        console.log(`Found ${result.summary.count} "tax" bills in session ${TEST_SESSION_ID}`);
+        console.log(
+          `Found ${result.summary.count} "tax" bills in session ${TEST_SESSION_ID}`
+        );
       });
     });
 
@@ -686,8 +706,6 @@ describeWithApi("LegiScan API Client", () => {
   // Dataset Operations Tests
   // ============================================
   describe("Dataset Operations", () => {
-    let TEST_ACCESS_KEY: string;
-
     describe("getDatasetList", () => {
       it("should list available datasets", async () => {
         const datasets = await client.getDatasetList();
@@ -715,13 +733,9 @@ describeWithApi("LegiScan API Client", () => {
 
         // All datasets should be for the specified state (verified by state_id)
         // California is state_id 5
-        datasets.forEach(dataset => {
+        datasets.forEach((dataset) => {
           expect(dataset.state_id).toBe(5); // CA = 5
         });
-
-        if (datasets.length > 0) {
-          TEST_ACCESS_KEY = datasets[0].access_key;
-        }
 
         console.log(`Found ${datasets.length} ${TEST_STATE} datasets`);
       });
@@ -737,12 +751,12 @@ describeWithApi("LegiScan API Client", () => {
       it("should filter datasets by state and year", async () => {
         const datasets = await client.getDatasetList({
           state: TEST_STATE,
-          year: 2023
+          year: 2023,
         });
 
         expect(Array.isArray(datasets)).toBe(true);
 
-        datasets.forEach(dataset => {
+        datasets.forEach((dataset) => {
           expect(dataset.state_id).toBe(5); // CA = 5
         });
 
@@ -780,7 +794,9 @@ describeWithApi("LegiScan API Client", () => {
         expect(typeof archive.zip).toBe("string");
         expect(archive.zip.length).toBeGreaterThan(0);
 
-        console.log(`Downloaded dataset: ${archive.session_name} (${Math.round(archive.zip.length / 1024)}KB base64)`);
+        console.log(
+          `Downloaded dataset: ${archive.session_name} (${Math.round(archive.zip.length / 1024)}KB base64)`
+        );
       });
     });
   });
@@ -861,11 +877,6 @@ describeWithApi("LegiScan API Client", () => {
 
         expect(typeof addResult).toBe("object");
         console.log(`Add to monitor result:`, addResult);
-
-        // Verify it was added
-        const monitorList = await client.getMonitorList();
-        const found = monitorList.find(item => item.bill_id === TEST_BILL_ID);
-        // Note: The bill may or may not appear immediately depending on API behavior
 
         // Remove bill from monitor
         const removeResult = await client.setMonitor({

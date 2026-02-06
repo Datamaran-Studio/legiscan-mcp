@@ -9,13 +9,13 @@
  * 5. Roll call vote analysis
  * 6. Legislator lookup
  *
- * Run with: npm run test:e2e
+ * Run with: npm run test:live
  * Requires: LEGISCAN_API_KEY environment variable
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { config } from "dotenv";
-import { LegiScanClient } from "../src/legiscan-client.js";
+import { LegiScanClient } from "../../src/legiscan-client.js";
 
 // Load .env file
 config();

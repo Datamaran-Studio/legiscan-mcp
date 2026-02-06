@@ -4,17 +4,26 @@
   "description": "MCP server for LegiScan API - Access legislative data from all 50 US states",
   "type": "module",
   "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
   "bin": {
     "legiscan-mcp": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "prepack": "npm run build",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
-    "test": "vitest run --exclude tests/e2e.test.ts",
-    "test:watch": "vitest --exclude tests/e2e.test.ts",
-    "test:e2e": "vitest run tests/e2e.test.ts",
-    "test:all": "vitest run",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:live": "vitest run --config vitest.live.config.ts",
+    "test:all": "npm run test:unit && npm run test:live",
     "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
     "lint": "eslint src tests",
     "lint:fix": "eslint src tests --fix",
@@ -43,7 +52,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "dotenv": "^16.3.1",
     "zod": "^3.22.4"
   },

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { LegiScanClient } from "../legiscan-client.js";
-import { jsonResponse, errorResponse } from "./helpers.js";
+import { jsonResponse, errorResponse, searchStateSchema } from "./helpers.js";
 
 export function registerSearchTools(server: McpServer, client: LegiScanClient) {
   // Full-text search (paginated, 50 per page)
@@ -16,8 +16,7 @@ export function registerSearchTools(server: McpServer, client: LegiScanClient) {
         .describe(
           "Search query. Supports full-text search syntax. URL encode special characters."
         ),
-      state: z
-        .string()
+      state: searchStateSchema
         .optional()
         .describe(
           "Two-letter state abbreviation or 'ALL' for nationwide search. Default: ALL"
