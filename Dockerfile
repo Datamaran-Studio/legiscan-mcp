@@ -13,4 +13,4 @@ RUN npm install -g supergateway
 
 EXPOSE 8080
 
-CMD ["supergateway", "--stdio", "node dist/index.js", "--port", "8080", "--bearerToken", "YOUR_SECRET_TOKEN"]
+CMD ["sh", "-c", "supergateway --stdio 'node dist/index.js' --port \"${PORT:-8080}\" --bearerToken \"$BEARER_TOKEN\""]
